@@ -19,7 +19,7 @@ services:
     runtime: docker
     dockerfilePath: ./api/Dockerfile
     dockerContext: .
-    plan: starter
+    plan: free
     healthCheckPath: /api/health
     autoDeploy: true
     envVars:
