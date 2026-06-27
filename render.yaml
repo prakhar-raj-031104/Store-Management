@@ -1,0 +1,46 @@
+# Render Blueprint — single web service that serves BOTH the API (/api/*) and
+# the built React SPA from one container, backed by a Neon Postgres database.
+#
+# Deploy:
+#   1. Create a Neon project, copy its connection string (with ?sslmode=require).
+#   2. In Render: New > Blueprint, point at this repo.
+#   3. Set the env vars marked `sync: false` below (secrets) in the dashboard.
+#      - DATABASE_URL  -> your Neon connection string
+#      - JWT_SECRET    -> a long random string (>= 32 chars)
+#      - RAZORPAY_*    -> your live Razorpay keys (optional; cash works without)
+#   4. After the first deploy, set CLIENT_ORIGIN and PUBLIC_WEB_URL to the
+#      service's public URL (https://<service>.onrender.com), then redeploy.
+#
+# Migrations run automatically on boot (`prisma migrate deploy` in the Dockerfile CMD).
+
+services:
+  - type: web
+    name: storeapp
+    runtime: docker
+    dockerfilePath: ./api/Dockerfile
+    dockerContext: .
+    plan: starter
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "4000"
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      # ---- Secrets / per-deploy values: set these in the Render dashboard ----
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: CLIENT_ORIGIN
+        sync: false
+      - key: PUBLIC_WEB_URL
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false

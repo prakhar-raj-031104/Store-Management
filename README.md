@@ -113,6 +113,32 @@ to your log shipper.
 **Health check:** `GET /api/health` → `{ ok: true, ts: <epoch ms> }`. The
 Dockerfile registers it as the container `HEALTHCHECK`.
 
+## Deploy to Render + Neon
+
+A [`render.yaml`](./render.yaml) blueprint deploys the whole app as **one Render
+web service** (Docker) that serves both `/api/*` and the React SPA, backed by a
+**Neon** Postgres database.
+
+1. **Neon** — create a project, then copy the connection string. Keep the
+   `?sslmode=require` suffix (Neon refuses non-TLS connections).
+2. **Render** — *New → Blueprint*, point it at this repo. Render reads
+   `render.yaml` and creates the `storeapp` web service.
+3. **Set the secret env vars** (marked `sync: false`) in the Render dashboard:
+   - `DATABASE_URL` — the Neon connection string from step 1
+   - `JWT_SECRET` — a long random string (≥ 32 chars)
+   - `RAZORPAY_KEY_ID` / `_SECRET` / `_WEBHOOK_SECRET` — live keys (optional;
+     the cash flow works without them)
+4. **First deploy** runs `prisma migrate deploy` automatically on boot. Once the
+   service is live, set `CLIENT_ORIGIN` and `PUBLIC_WEB_URL` to the service URL
+   (`https://<service>.onrender.com`) and redeploy so CORS and the QR codes use
+   the real origin.
+
+Health check: Render polls `GET /api/health`. The server refuses to start in
+production if `DATABASE_URL`, a real `JWT_SECRET`, or `CLIENT_ORIGIN` are missing.
+
+> To seed a demo store on Neon, run `DATABASE_URL=<neon-url> npm run seed` from
+> `api/` once, locally.
+
 ## Razorpay setup
 
 1. Create a Razorpay account → Settings → API Keys → generate **test** keys.
