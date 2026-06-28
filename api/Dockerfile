@@ -31,6 +31,15 @@ ENV NODE_ENV=production
 ENV PORT=4000
 WORKDIR /app
 
+# Prisma's query + schema (migration) engines are dynamically linked against
+# OpenSSL. The -slim image doesn't ship it, so without this Prisma falls back
+# to "openssl-1.1.x" and the schema engine fails to start ("Schema engine error")
+# when running `prisma migrate deploy` on boot. Install it so Prisma detects
+# OpenSSL 3.0.x (matching the debian-openssl-3.0.x engine generated above).
+RUN apt-get update -y \
+ && apt-get install -y --no-install-recommends openssl ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
 # API source + deps + generated Prisma client
 COPY api/package.json api/package-lock.json ./
 COPY api/prisma ./prisma
